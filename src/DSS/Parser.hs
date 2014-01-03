@@ -3,18 +3,21 @@ module DSS.Parser where
     import Text.Regex
     import Text.Regex.Posix
     import Data.List
+    import Text.ParserCombinators.ReadP
 
-    data Discussion = Claim | Consent | Correction | Rebuttal | Supplement | Tree deriving ( Show )
-    data Statement = TopStatement String | IndentStatement [ String ] deriving ( Show )
+    data Discussion = Claim | Consent | Correction | Rebuttal | Supplement deriving ( Show )
 
-    parse :: String -> [ Statement ]
-    parse str = map toStatement $ groupBy isSame $ map lineParse $ filter ( not . null ) $ lines str where
-        isSame ( Right _ ) ( Right _ ) = True
-        isSame _ _ = False
-        toStatement [ Left s ] = TopStatement s
-        toStatement xs = IndentStatement $ map ( \ ( Right x ) -> x ) xs
+    parse :: ReadS Discussion
+    parse s = ( readP_to_S $ choice $ [ parseClaim , parseConsent , parseRebuttal , parseSupplement ] ) s
 
-    lineParse :: String -> Either String String
-    lineParse str = case str =~ "^\\s*" :: ( String , String , String ) of
-        ( _ , "" , body ) -> Left body
-        ( _ , _ , body ) -> Right body
+    parseClaim :: ReadP Discussion
+    parseClaim = return Claim
+
+    parseConsent :: ReadP Discussion
+    parseConsent = return Consent
+
+    parseRebuttal :: ReadP Discussion
+    parseRebuttal = return Rebuttal
+
+    parseSupplement :: ReadP Discussion
+    parseSupplement = return Supplement
