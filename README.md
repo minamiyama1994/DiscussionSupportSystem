@@ -27,3 +27,8 @@
 * `page_number ::= page_number DIGIT`
 * `quote_discussion ::= "text" STRING`
 * `claim ::= "claim" STRING`
+
+## TODO
+
+* READMEに英語を追加する
+* ソースコードにHaddoc向けのコメントを追加する
