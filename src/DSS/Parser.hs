@@ -1,5 +1,5 @@
 {-# OPTIONS -Wall #-}
-module DSS.Parser where
+module DSS.Parser ( Discussion , Basiss , Basis , Url , Book , Quote , Isbn , Pages , Claim , parse ) where
     
     import Control.Applicative
     import Data.List
@@ -124,40 +124,6 @@ module DSS.Parser where
         a <- authority ;
         p <- path_abempty ;
         return $ ss ++ a ++ p } , path_absolute , path_rootless , path_empty ]
-    
-    uri_reference :: TPR.ReadP String
-    uri_reference = choice [ uri , relative_ref ]
-    
-    absolute_URI :: TPR.ReadP String
-    absolute_URI = do
-        sc <- scheme
-        colon <- TPC.string ":"
-        hp <- hier_part
-        q <- optional $ do
-            q' <- TPC.string "?"
-            q'' <- query
-            return $ q' ++ q''
-        return $ sc ++ colon ++ hp ++ maybe "" id q
-    
-    relative_ref :: TPR.ReadP String
-    relative_ref = do
-        rp <- relative_part
-        q <- optional $ do
-            q' <- TPC.string "?"
-            q'' <- query
-            return $ q' ++ q''
-        f <- optional $ do
-            h <- TPC.string "#"
-            f' <- fragment
-            return $ h ++ f'
-        return $ rp ++ maybe "" id q ++ maybe "" id f
-    
-    relative_part :: TPR.ReadP String
-    relative_part = choice [ do
-        ss <- TPC.string "//"
-        a <- authority
-        p <- path_abempty
-        return $ ss ++ a ++ p , path_absolute , path_noscheme , path_empty ]
     
     scheme :: TPR.ReadP String
     scheme = do
@@ -343,9 +309,6 @@ module DSS.Parser where
     reg_name :: TPR.ReadP String
     reg_name = ( many $ choice [ unreserved , pct_encoded , sub_delims ] ) >>= return . concat
     
-    path :: TPR.ReadP String
-    path = choice [ path_abempty , path_absolute , path_noscheme , path_rootless , path_empty ]
-    
     path_abempty :: TPR.ReadP String
     path_abempty = do
         m <- many $ do
@@ -366,15 +329,6 @@ module DSS.Parser where
             return $ s' ++ concat m
         return $ s ++ maybe "" id o
     
-    path_noscheme :: TPR.ReadP String
-    path_noscheme = do
-        s <- segment_nz_nc
-        m <- many $ do
-            s' <- TPC.string "/"
-            s'' <- segment
-            return $ s' ++ s''
-        return $ s ++ concat m
-    
     path_rootless :: TPR.ReadP String
     path_rootless = do
         s <- segment_nz
@@ -392,9 +346,6 @@ module DSS.Parser where
     
     segment_nz :: TPR.ReadP String
     segment_nz = some pchar >>= return . concat
-    
-    segment_nz_nc :: TPR.ReadP String
-    segment_nz_nc = ( some $ choice [ unreserved , pct_encoded , sub_delims , TPC.string "@" ] ) >>= return . concat
     
     pchar :: TPR.ReadP String
     pchar = choice [ unreserved , pct_encoded , sub_delims , TPC.string ":" , TPC.string "@" ]
@@ -414,12 +365,6 @@ module DSS.Parser where
     
     unreserved :: TPR.ReadP String
     unreserved = choice [ alpha , digit , TPC.char '-' , TPC.char '.' , TPC.char '_' , TPC.char '~' ] >>= \ x -> return [ x ]
-    
-    reserved :: TPR.ReadP String
-    reserved = choice [ gen_delims , sub_delims ]
-    
-    gen_delims :: TPR.ReadP String
-    gen_delims = choice [ TPC.string x | x <- [ ":" , "/" , "?" , "#" , "[" , "]" , "@" ] ]
     
     sub_delims :: TPR.ReadP String
     sub_delims = choice [ TPC.string x | x <- [ "!" , "$" , "&" , "'" , "(" , ")" , "*" , "+" , "," , ";" , "=" ] ]
