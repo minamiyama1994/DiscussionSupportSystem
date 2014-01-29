@@ -7,21 +7,27 @@ module DSS.Parser ( Discussion , Basiss , Basis , Url , Book , Quote , Isbn , Pa
     import qualified Text.Parser.Char as TPC
     import qualified Text.ParserCombinators.ReadP as TPR
 
-    data Discussion = Discussion Basiss Claim deriving ( Show , Eq )
+    data Discussion = Discussion ( Maybe Expression )Basiss Claim deriving ( Show , Eq )
     data Basiss = Basiss [ Basis ] deriving ( Show , Eq )
     data Basis = UrlBasis Url | BookBasis Book | QuoteBasis Quote deriving ( Show , Eq )
     data Url = Url String deriving ( Show , Eq )
     data Book = Book Isbn Pages deriving ( Show , Eq )
-    data Quote = Quote String deriving ( Show , Eq )
+    data Quote = Quote [ Expression ] deriving ( Show , Eq )
     data Isbn = Isbn String deriving ( Show , Eq )
     data Pages = Pages [ Int ] deriving ( Show , Eq )
-    data Claim = Claim String deriving ( Show , Eq )
+    data Claim = Claim [ Expression ] deriving ( Show , Eq )
+    data ExpressionString = StringExpression String | QuoteExpression [ Expression ] deriving ( Show , Eq )
+    data ExpressionString = StringExpression String | QuoteExpression Expression deriving ( Show , Eq )
+    data Expression = Expression [ String ]
 
     parse :: String -> [ Discussion ]
-    parse s = nub $ map fst $ TPR.readP_to_S discussion s
+    parse s = map fst $ TPR.readP_to_S discussion s
 
     discussion :: TPR.ReadP Discussion
-    discussion = Discussion <$> basiss <*> claim
+    discussion = Discussion <$> opinion <*> basiss <*> claim
+
+    opinion :: TPR.ReadP ( Maybe Expression )
+    opinion = optional expression
 
     basiss :: TPR.ReadP Basiss
     basiss = Basiss <$> ( some $ basis )
@@ -90,17 +96,24 @@ module DSS.Parser ( Discussion , Basiss , Basis , Url , Book , Quote , Isbn , Pa
     digit_ :: TPR.ReadP String
     digit_ = some $ TPC.oneOf [ '0' .. '9' ]
 
-    string_ :: TPR.ReadP String
-    string_ = do
-        b <- between ( TPC.string "\"" ) ( TPC.string "\"" ) $ string_body
-        return $ b
+    string_ :: TPR.ReadP [ ExpressionString ]
+    string_ = between ( TPC.string "\"" ) ( TPC.string "\"" ) string_body
 
-    string_body :: TPR.ReadP String
+    string_body :: TPR.ReadP [ ExpressionString ]
     string_body = do
-        c <- many $ choice [ TPC.noneOf "\"\\" , do
-            _ : s : [ ] <- choice [ TPC.string "\\\\" , TPC.string "\\\"" ]
+        c <- many $ choice [ StringExpression <$> ( many $ TPC.noneOf "\"\\" ) , do
+            s <- choice [ StringExpression <$> TPC.string "\\\\" , StringExpression <$> TPC.string "\\\"" , QuoteExpression <$> between ( TPC.string "[" ) ( TPC.string "]" ) expression ]
             return s ]
         return $ c
+
+    expression :: TPR.ReadP Expression
+    expression = QuoteExpression <$> do
+        f <- many $ TPC.noneOf ". \t\r\n"
+        pre <- many $
+            _ <- TPC.string "."
+            s <- many $ TPC.noneOf ". \t\r\n"
+            return s
+        return $ Expression $ f : pre
 
     uri :: TPR.ReadP String
     uri = do
