@@ -14,4 +14,4 @@ main = do
             putStrLn $ "    DSS_IMPORT_PATH"
         fileName : _ -> do
             res <- readFile fileName >>= return . DP.parse
-            print res
+            mapM_ print res

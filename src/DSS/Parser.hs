@@ -7,27 +7,37 @@ module DSS.Parser ( Discussion , Basiss , Basis , Url , Book , Quote , Isbn , Pa
     import qualified Text.Parser.Char as TPC
     import qualified Text.ParserCombinators.ReadP as TPR
 
-    data Discussion = Discussion ( Maybe Expression )Basiss Claim deriving ( Show , Eq )
+    data Discussion = Discussion ( Maybe Expression ) Basiss Claim deriving ( Show , Eq )
     data Basiss = Basiss [ Basis ] deriving ( Show , Eq )
     data Basis = UrlBasis Url | BookBasis Book | QuoteBasis Quote deriving ( Show , Eq )
     data Url = Url String deriving ( Show , Eq )
     data Book = Book Isbn Pages deriving ( Show , Eq )
-    data Quote = Quote [ Expression ] deriving ( Show , Eq )
+    data Quote = Quote [ ExpressionString ] deriving ( Show , Eq )
     data Isbn = Isbn String deriving ( Show , Eq )
     data Pages = Pages [ Int ] deriving ( Show , Eq )
-    data Claim = Claim [ Expression ] deriving ( Show , Eq )
-    data ExpressionString = StringExpression String | QuoteExpression [ Expression ] deriving ( Show , Eq )
+    data Claim = Claim [ ExpressionString ] deriving ( Show , Eq )
     data ExpressionString = StringExpression String | QuoteExpression Expression deriving ( Show , Eq )
-    data Expression = Expression [ String ]
+    data Expression = Expression [ String ] deriving ( Show , Eq )
 
+    -- |
+    -- parse discussion
+    --
+    -- >>> TPR readP_to_S parse "opinion to hoge.piyo\ntext \"\"\nclaim \"123{hoge.piyo}\"\n"
+    -- Discussion (Just (Expression ["hoge","piyo"])) (Basiss [QuoteBasis (Quote [])]) (Claim [StringExpression "123",QuoteExpression (Expression ["hoge","piyo"])])
     parse :: String -> [ Discussion ]
-    parse s = map fst $ TPR.readP_to_S discussion s
+    parse s = nub $ map fst $ TPR.readP_to_S discussion s
 
     discussion :: TPR.ReadP Discussion
     discussion = Discussion <$> opinion <*> basiss <*> claim
 
     opinion :: TPR.ReadP ( Maybe Expression )
-    opinion = optional expression
+    opinion = optional $ do
+        _ <- many $ TPC.oneOf " \t\r\n"
+        _ <- TPC.string "opinion"
+        _ <- some $ TPC.oneOf " \t\r\n"
+        _ <- TPC.string "to"
+        _ <- some $ TPC.oneOf " \t\r\n"
+        expression
 
     basiss :: TPR.ReadP Basiss
     basiss = Basiss <$> ( some $ basis )
@@ -101,19 +111,16 @@ module DSS.Parser ( Discussion , Basiss , Basis , Url , Book , Quote , Isbn , Pa
 
     string_body :: TPR.ReadP [ ExpressionString ]
     string_body = do
-        c <- many $ choice [ StringExpression <$> ( many $ TPC.noneOf "\"\\" ) , do
-            s <- choice [ StringExpression <$> TPC.string "\\\\" , StringExpression <$> TPC.string "\\\"" , QuoteExpression <$> between ( TPC.string "[" ) ( TPC.string "]" ) expression ]
-            return s ]
-        return $ c
+        c <- many $ choice [ StringExpression <$> ( some $ TPC.noneOf "\"\\{}" ) , StringExpression <$> ( TPC.string "\\\\" >> return "\\" ) , StringExpression <$> ( TPC.string "\\\"" >> return "\"" ) , QuoteExpression <$> between ( TPC.string "{" ) ( TPC.string "}" ) expression ]
+        return $ foldr ( \ e l -> case ( e , l ) of
+                ( StringExpression e' , StringExpression l' : ls ) -> StringExpression ( e' ++ l' ) : ls
+                _ -> e : l ) [ ] c
 
     expression :: TPR.ReadP Expression
-    expression = QuoteExpression <$> do
-        f <- many $ TPC.noneOf ". \t\r\n"
-        pre <- many $
-            _ <- TPC.string "."
-            s <- many $ TPC.noneOf ". \t\r\n"
-            return s
-        return $ Expression $ f : pre
+    expression = do
+        f <- some $ TPC.noneOf ". \t\r\n\""
+        post <- some $ TPC.string "." >> ( some $ TPC.noneOf ". \t\r\n\"" )
+        return $ Expression $ f : post
 
     uri :: TPR.ReadP String
     uri = do
@@ -405,4 +412,4 @@ module DSS.Parser ( Discussion , Basiss , Basis , Url , Book , Quote , Isbn , Pa
         s6 <- some digit
         s7 <- TPC.string "-"
         s8 <- some digit
-        return $Isbn $ s0 ++ s1 ++ s2 ++ s3 ++ s4 ++ s5 ++ s6 ++ s7 ++ s8
+        return $ Isbn $ s0 ++ s1 ++ s2 ++ s3 ++ s4 ++ s5 ++ s6 ++ s7 ++ s8
