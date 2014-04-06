@@ -62,4 +62,4 @@ test-suite doctest
   type: exitcode-stdio-1.0
   main-is: Doctest.hs
   hs-source-dirs: test
-  build-depends: base , DiscussionSupportSystem , doctest
+  build-depends: base , DiscussionSupportSystem , doctest >= 0.9.11

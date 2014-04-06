@@ -23,16 +23,18 @@ module DSS.Parser ( Discussion ( Discussion ) , Basiss ( Basiss ) , Label ( Labe
     -- |
     -- parse discussion
     --
-    -- >>> parse "opinion to hoge.piyo\ntext \"\"\nclaim \"123{hoge.piyo}\"\n"
+    -- >>> readFile "test1.dss" >>= return . parse
     -- [Discussion (Just (Expression ["hoge","piyo"])) (Basiss [(Nothing,QuoteBasis (Quote []))]) (Claim [StringExpression "123",QuoteExpression (Expression ["hoge","piyo"])])]
+    -- >>> readFile "test2.dss" >>= return . parse
+    -- [Discussion (Just (Expression ["hoge","piyo"])) (Basiss [(Just (Label "1"),QuoteBasis (Quote [StringExpression "hoge",QuoteExpression (Expression ["piyo","foo"]),StringExpression "bar"])),(Nothing,UrlBasis (Url "https://github.com/minamiyama1994")),(Just (Label "2"),BookBasis (Book (Isbn "9784798120393") (Just (Pages [1024,2048]))))]) (Claim [StringExpression "123",QuoteExpression (Expression ["hoge","piyo"])])]
     parse :: String -> [ Discussion ]
     parse s = nub $ map fst $ filter ( \ ( _ , s_ ) -> "" /= s_ ) $ TPR.readP_to_S discussion s
 
     discussion :: TPR.ReadP Discussion
-    discussion = Discussion <$> opinion <*> basiss <*> claim
+    discussion = Discussion <$> optional opinion <*> basiss <*> claim
 
-    opinion :: TPR.ReadP ( Maybe Expression )
-    opinion = optional $ do
+    opinion :: TPR.ReadP Expression
+    opinion = do
         _ <- many $ TPC.oneOf " \t\r\n"
         _ <- TPC.string "opinion"
         _ <- some $ TPC.oneOf " \t\r\n"
@@ -46,7 +48,7 @@ module DSS.Parser ( Discussion ( Discussion ) , Basiss ( Basiss ) , Label ( Labe
     label :: TPR.ReadP Label
     label = do
         _ <- many $ TPC.oneOf " \t\r\n"
-        l <- some $ TPC.oneOf $ [ '0' .. '9' ] ++ [ 'A' .. 'F' ] ++ [ 'a' .. 'f' ]
+        l <- some $ TPC.noneOf " \t\r\n"
         _ <- many $ TPC.oneOf " \t\r\n"
         _ <- TPC.string ":"
         return $ Label l
