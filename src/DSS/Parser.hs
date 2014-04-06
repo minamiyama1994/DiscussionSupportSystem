@@ -24,7 +24,7 @@ module DSS.Parser ( Discussion ( Discussion ) , Basiss ( Basiss ) , Label ( Labe
     -- parse discussion
     --
     -- >>> parse "opinion to hoge.piyo\ntext \"\"\nclaim \"123{hoge.piyo}\"\n"
-    -- [Discussion (Just (Expression ["hoge","piyo"])) (Basiss [QuoteBasis (Quote [])]) (Claim [StringExpression "123",QuoteExpression (Expression ["hoge","piyo"])])]
+    -- [Discussion (Just (Expression ["hoge","piyo"])) (Basiss [(Nothing,QuoteBasis (Quote []))]) (Claim [StringExpression "123",QuoteExpression (Expression ["hoge","piyo"])])]
     parse :: String -> [ Discussion ]
     parse s = nub $ map fst $ filter ( \ ( _ , s_ ) -> "" /= s_ ) $ TPR.readP_to_S discussion s
 

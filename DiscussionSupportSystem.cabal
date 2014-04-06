@@ -58,8 +58,8 @@ library
   -- Directories containing source files.
   hs-source-dirs:      src
 
-test-suite spec
+test-suite doctest
   type: exitcode-stdio-1.0
-  main-is: Main.hs
+  main-is: Doctest.hs
   hs-source-dirs: test
-  build-depends: base , DiscussionSupportSystem 
+  build-depends: base , DiscussionSupportSystem , doctest
