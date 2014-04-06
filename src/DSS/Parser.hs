@@ -1,5 +1,5 @@
 {-# OPTIONS -Wall #-}
-module DSS.Parser ( Discussion ( Discussion ) , Basiss ( Basiss ) , Basis ( UrlBasis , BookBasis , QuoteBasis ) , Url ( Url ) , Book ( Book ) , Quote ( Quote ) , Isbn ( Isbn ) , Pages ( Pages ) , Claim ( Claim ) , ExpressionString ( StringExpression , QuoteExpression ) , Expression ( Expression ) , parse ) where
+module DSS.Parser ( Discussion ( Discussion ) , Basiss ( Basiss ) , Label ( Label ) , Basis ( UrlBasis , BookBasis , QuoteBasis ) , Url ( Url ) , Book ( Book ) , Quote ( Quote ) , Isbn ( Isbn ) , Pages ( Pages ) , Claim ( Claim ) , ExpressionString ( StringExpression , QuoteExpression ) , Expression ( Expression ) , parse ) where
 
     import Control.Applicative
     import Data.List
@@ -8,7 +8,8 @@ module DSS.Parser ( Discussion ( Discussion ) , Basiss ( Basiss ) , Basis ( UrlB
     import qualified Text.ParserCombinators.ReadP as TPR
 
     data Discussion = Discussion ( Maybe Expression ) Basiss Claim deriving ( Show , Eq )
-    data Basiss = Basiss [ Basis ] deriving ( Show , Eq )
+    data Basiss = Basiss [ ( Maybe Label , Basis ) ] deriving ( Show , Eq )
+    data Label = Label String deriving ( Show , Eq )
     data Basis = UrlBasis Url | BookBasis Book | QuoteBasis Quote deriving ( Show , Eq )
     data Url = Url String deriving ( Show , Eq )
     data Book = Book Isbn ( Maybe Pages ) deriving ( Show , Eq )
@@ -40,7 +41,15 @@ module DSS.Parser ( Discussion ( Discussion ) , Basiss ( Basiss ) , Basis ( UrlB
         expression
 
     basiss :: TPR.ReadP Basiss
-    basiss = Basiss <$> ( some basis )
+    basiss = Basiss <$> ( some ( ( , ) <$> optional label <*> basis ) )
+
+    label :: TPR.ReadP Label
+    label = do
+        _ <- many $ TPC.oneOf " \t\r\n"
+        l <- some $ TPC.oneOf $ [ '0' .. '9' ] ++ [ 'A' .. 'F' ] ++ [ 'a' .. 'f' ]
+        _ <- many $ TPC.oneOf " \t\r\n"
+        _ <- TPC.string ":"
+        return $ Label l
 
     basis :: TPR.ReadP Basis
     basis = choice [ UrlBasis <$> url , BookBasis <$> book , QuoteBasis <$> quote_discussion ]

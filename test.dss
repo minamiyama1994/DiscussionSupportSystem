@@ -1,5 +1,5 @@
 opinion to hoge.piyo
-text "hoge{piyo.foo}bar"
+1:text "hoge{piyo.foo}bar"
 url https://github.com/minamiyama1994
-ISBN 9784798120393 pages ( 1024 , 2048 )
+2:ISBN 9784798120393 pages ( 1024 , 2048 )
 claim "123{hoge.piyo}"
