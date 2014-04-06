@@ -57,4 +57,9 @@ library
   
   -- Directories containing source files.
   hs-source-dirs:      src
-  
+
+test-suite spec
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  hs-source-dirs: test
+  build-depends: base , DiscussionSupportSystem 
