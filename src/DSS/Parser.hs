@@ -23,37 +23,14 @@ module DSS.Parser ( Discussion ( Discussion ) , Basiss ( Basiss ) , Label ( Labe
     -- |
     -- parse discussion
     -- 
-    -- file "test1.tss" is
-    -- 
-    -- opinion to hoge.piyo
-    -- text""
-    -- claim "123{hoge.piyo}"
-    -- 
-    -- file "test2.dss" is
-    -- 
-    -- opinion to hoge.piyo
-    -- 1:text "hoge{piyo.foo}bar"
-    -- url https://github.com/minamiyama1994
-    -- 2 : ISBN 9784798120393 pages ( 1024 , 2048 )
-    -- claim "123{hoge.piyo}"
-    -- 
-    -- file "test2.dss" is
-    --  
-    -- opinion to hoge.piyo
-    -- 1:text "hoge{piyo.foo}bar"
-    -- url https://github.com/minamiyama1994
-    -- 2 : ISBN 9784798120393 pages ( 1024 , 2048 )
-    -- 3 : ISBN 9784798120393
-    -- claim "123{hoge.piyo}"
-    -- 
-    -- >>> readFile "test1.dss" >>= return . parse
+    -- >>> parse "opinion to hoge.piyo\ntext\"\"\nclaim \"123{hoge.piyo}\""
     -- [Discussion (Just (Expression ["hoge","piyo"])) (Basiss [(Nothing,QuoteBasis (Quote []))]) (Claim [StringExpression "123",QuoteExpression (Expression ["hoge","piyo"])])]
-    -- >>> readFile "test2.dss" >>= return . parse
+    -- >>> parse "opinion to hoge.piyo\n1:text \"hoge{piyo.foo}bar\"\nurl https://github.com/minamiyama1994\n2 : ISBN 9784798120393 pages ( 1024 , 2048 )\nclaim \"123{hoge.piyo}\""
     -- [Discussion (Just (Expression ["hoge","piyo"])) (Basiss [(Just (Label "1"),QuoteBasis (Quote [StringExpression "hoge",QuoteExpression (Expression ["piyo","foo"]),StringExpression "bar"])),(Nothing,UrlBasis (Url "https://github.com/minamiyama1994")),(Just (Label "2"),BookBasis (Book (Isbn "9784798120393") (Just (Pages [1024,2048]))))]) (Claim [StringExpression "123",QuoteExpression (Expression ["hoge","piyo"])])]
-    -- >>> readFile "test3.dss" >>= return . parse
+    -- >>> parse "opinion to hoge.piyo\n1:text \"hoge{piyo.foo}bar\"\nurl https://github.com/minamiyama1994\n2 : ISBN 9784798120393 pages ( 1024 , 2048 )\n3 : ISBN 9784798120393\nclaim \"123{hoge.piyo}\""
     -- [Discussion (Just (Expression ["hoge","piyo"])) (Basiss [(Just (Label "1"),QuoteBasis (Quote [StringExpression "hoge",QuoteExpression (Expression ["piyo","foo"]),StringExpression "bar"])),(Nothing,UrlBasis (Url "https://github.com/minamiyama1994")),(Just (Label "2"),BookBasis (Book (Isbn "9784798120393") (Just (Pages [1024,2048])))),(Just (Label "3"),BookBasis (Book (Isbn "9784798120393") Nothing))]) (Claim [StringExpression "123",QuoteExpression (Expression ["hoge","piyo"])])]
     parse :: String -> [ Discussion ]
-    parse s = nub $ map fst $ filter ( \ ( _ , s_ ) -> "" /= s_ ) $ TPR.readP_to_S discussion s
+    parse s = nub $ map fst $ TPR.readP_to_S discussion s
 
     discussion :: TPR.ReadP Discussion
     discussion = Discussion <$> optional opinion <*> basiss <*> claim
