@@ -1,5 +1,5 @@
 {-# OPTIONS -Wall #-}
-module DSS.Parser ( Discussion , Basiss , Basis , Url , Book , Quote , Isbn , Pages , Claim , parse ) where
+module DSS.Parser ( Discussion ( Discussion ) , Basiss ( Basiss ) , Basis ( UrlBasis , BookBasis , QuoteBasis ) , Url ( Url ) , Book ( Book ) , Quote ( Quote ) , Isbn ( Isbn ) , Pages ( Pages ) , Claim ( Claim ) , ExpressionString ( StringExpression , QuoteExpression ) , Expression ( Expression ) , parse ) where
 
     import Control.Applicative
     import Data.List
@@ -11,7 +11,7 @@ module DSS.Parser ( Discussion , Basiss , Basis , Url , Book , Quote , Isbn , Pa
     data Basiss = Basiss [ Basis ] deriving ( Show , Eq )
     data Basis = UrlBasis Url | BookBasis Book | QuoteBasis Quote deriving ( Show , Eq )
     data Url = Url String deriving ( Show , Eq )
-    data Book = Book Isbn Pages deriving ( Show , Eq )
+    data Book = Book Isbn ( Maybe Pages ) deriving ( Show , Eq )
     data Quote = Quote [ ExpressionString ] deriving ( Show , Eq )
     data Isbn = Isbn String deriving ( Show , Eq )
     data Pages = Pages [ Int ] deriving ( Show , Eq )
@@ -22,10 +22,10 @@ module DSS.Parser ( Discussion , Basiss , Basis , Url , Book , Quote , Isbn , Pa
     -- |
     -- parse discussion
     --
-    -- >>> TPR readP_to_S parse "opinion to hoge.piyo\ntext \"\"\nclaim \"123{hoge.piyo}\"\n"
-    -- Discussion (Just (Expression ["hoge","piyo"])) (Basiss [QuoteBasis (Quote [])]) (Claim [StringExpression "123",QuoteExpression (Expression ["hoge","piyo"])])
+    -- >>> parse "opinion to hoge.piyo\ntext \"\"\nclaim \"123{hoge.piyo}\"\n"
+    -- [Discussion (Just (Expression ["hoge","piyo"])) (Basiss [QuoteBasis (Quote [])]) (Claim [StringExpression "123",QuoteExpression (Expression ["hoge","piyo"])])]
     parse :: String -> [ Discussion ]
-    parse s = nub $ map fst $ TPR.readP_to_S discussion s
+    parse s = nub $ map fst $ filter ( \ ( _ , s_ ) -> "" /= s_ ) $ TPR.readP_to_S discussion s
 
     discussion :: TPR.ReadP Discussion
     discussion = Discussion <$> opinion <*> basiss <*> claim
@@ -40,7 +40,7 @@ module DSS.Parser ( Discussion , Basiss , Basis , Url , Book , Quote , Isbn , Pa
         expression
 
     basiss :: TPR.ReadP Basiss
-    basiss = Basiss <$> ( some $ basis )
+    basiss = Basiss <$> ( some basis )
 
     basis :: TPR.ReadP Basis
     basis = choice [ UrlBasis <$> url , BookBasis <$> book , QuoteBasis <$> quote_discussion ]
@@ -58,15 +58,16 @@ module DSS.Parser ( Discussion , Basiss , Basis , Url , Book , Quote , Isbn , Pa
         _ <- many $ TPC.oneOf " \t\r\n"
         _ <- TPC.string "ISBN"
         i <- isbn
-        p <- pages
+        p <- optional pages
         return $ Book i p
 
     pages :: TPR.ReadP Pages
     pages = do
         _ <- many $ TPC.oneOf " \t\r\n"
         _ <- TPC.string "pages"
-        b <- between ( TPC.string "(" ) ( TPC.string ")" ) ( optional page_numbers )
-        return $ Pages $ maybe [ ] id b
+        _ <- many $ TPC.oneOf " \t\r\n"
+        b <- between ( TPC.string "(" ) ( TPC.string ")" ) page_numbers
+        return $ Pages b
 
     page_numbers :: TPR.ReadP [ Int ]
     page_numbers = do
@@ -383,7 +384,7 @@ module DSS.Parser ( Discussion , Basiss , Basis , Url , Book , Quote , Isbn , Pa
         return $ s ++ [ h ] ++ [ h' ]
 
     unreserved :: TPR.ReadP String
-    unreserved = choice [ alpha , digit , TPC.char '-' , TPC.char '.' , TPC.char '_' , TPC.char '~' ] >>= \ x -> return [ x ]
+    unreserved = choice [ alpha , digit , TPC.char '-' , TPC.char '.' , TPC.char '_' , TPC.char '~' ] >>= return . return
 
     sub_delims :: TPR.ReadP String
     sub_delims = choice [ TPC.string x | x <- [ "!" , "$" , "&" , "'" , "(" , ")" , "*" , "+" , "," , ";" , "=" ] ]
@@ -403,13 +404,8 @@ module DSS.Parser ( Discussion , Basiss , Basis , Url , Book , Quote , Isbn , Pa
     isbn :: TPR.ReadP Isbn
     isbn = do
         _ <- many $ TPC.oneOf " \t\r\n"
-        s0 <- some digit
-        s1 <- TPC.string "-"
-        s2 <- some digit
-        s3 <- TPC.string "-"
-        s4 <- some digit
-        s5 <- TPC.string "-"
-        s6 <- some digit
-        s7 <- TPC.string "-"
-        s8 <- some digit
-        return $ Isbn $ s0 ++ s1 ++ s2 ++ s3 ++ s4 ++ s5 ++ s6 ++ s7 ++ s8
+        s <- some digit
+        ss <- many $ do
+            _ <- TPC.string "-"
+            some digit
+        return $ Isbn $ concat $ s : ss
