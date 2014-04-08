@@ -1,10 +1,12 @@
-module DSS.Html ( generateHtml ) where
+module DSS.Html ( generateHtml , Html ( Html ) ) where
 
     import DSS.Parser
-    import Text.Html
+    import Text.Html ( stringToHtmlString )
 
-    generateHtml :: Discussion -> String -> String
-    generateHtml ( Discussion opinion basiss claim ) baseUrl = concat [ gen baseUrl | gen <- [ generateOpinion opinion , generateBasiss basiss , generateClaim claim ] ]
+    data Html = Html String
+
+    generateHtml :: Discussion -> String -> Html
+    generateHtml ( Discussion opinion basiss claim ) baseUrl = Html $ concat [ gen baseUrl | gen <- [ generateOpinion opinion , generateBasiss basiss , generateClaim claim ] ]
 
     generateOpinion :: Maybe Expression -> String -> String
     generateOpinion ( Just expr ) baseUrl = "<h1>to " ++ generateExpression expr baseUrl ++ "</h1>"
