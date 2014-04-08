@@ -10,7 +10,7 @@ name:                DiscussionSupportSystem
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.2.0.0
+version:             0.3.0.0
 
 -- A short (one-line) description of the package.
 synopsis:            Discussion support system
@@ -47,13 +47,13 @@ cabal-version:       >=1.8
 
 library
   -- Modules exported by the library.
-  exposed-modules:     DSS.Parser
+  exposed-modules:     DSS.Parser DSS.Html
   
   -- Modules included in this library but not exported.
   -- other-modules:       
   
   -- Other library packages from which modules are imported.
-  build-depends:       base == 4.6.* , parsers >= 0.11
+  build-depends:       base == 4.6.* , parsers >= 0.11 , html >= 1.0.1.2
   
   -- Directories containing source files.
   hs-source-dirs:      src
