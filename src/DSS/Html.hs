@@ -3,8 +3,6 @@ module DSS.Html ( generateHtml ) where
     import DSS.Parser
     import Text.Html
 
-    data Html = Html String
-
     generateHtml :: Discussion -> String -> String
     generateHtml ( Discussion opinion basiss claim ) baseUrl = concat [ gen baseUrl | gen <- [ generateOpinion opinion , generateBasiss basiss , generateClaim claim ] ]
 
