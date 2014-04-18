@@ -7,18 +7,18 @@ module DSS.Parser ( Discussion ( Discussion ) , Basiss ( Basiss ) , Label ( Labe
     import qualified Text.Parser.Char as TPC
     import qualified Text.ParserCombinators.ReadP as TPR
 
-    data Discussion = Discussion ( Maybe Expression ) Basiss Claim deriving ( Show , Eq )
-    data Basiss = Basiss [ ( Maybe Label , Basis ) ] deriving ( Show , Eq )
-    data Label = Label String deriving ( Show , Eq )
-    data Basis = UrlBasis Url | BookBasis Book | QuoteBasis Quote deriving ( Show , Eq )
-    data Url = Url String deriving ( Show , Eq )
-    data Book = Book Isbn ( Maybe Pages ) deriving ( Show , Eq )
-    data Quote = Quote [ ExpressionString ] deriving ( Show , Eq )
-    data Isbn = Isbn String deriving ( Show , Eq )
-    data Pages = Pages [ Int ] deriving ( Show , Eq )
-    data Claim = Claim [ ExpressionString ] deriving ( Show , Eq )
-    data ExpressionString = StringExpression String | QuoteExpression Expression deriving ( Show , Eq )
-    data Expression = Expression [ String ] deriving ( Show , Eq )
+    data Discussion = Discussion ( Maybe Expression ) Basiss Claim deriving ( Show , Read , Eq )
+    data Basiss = Basiss [ ( Maybe Label , Basis ) ] deriving ( Show , Read , Eq )
+    data Label = Label String deriving ( Show , Read , Eq )
+    data Basis = UrlBasis Url | BookBasis Book | QuoteBasis Quote deriving ( Show , Read , Eq )
+    data Url = Url String deriving ( Show , Read , Eq )
+    data Book = Book Isbn ( Maybe Pages ) deriving ( Show , Read , Eq )
+    data Quote = Quote [ ExpressionString ] deriving ( Show , Read , Eq )
+    data Isbn = Isbn String deriving ( Show , Read , Eq )
+    data Pages = Pages [ Int ] deriving ( Show , Read , Eq )
+    data Claim = Claim [ ExpressionString ] deriving ( Show , Read , Eq )
+    data ExpressionString = StringExpression String | QuoteExpression Expression deriving ( Show , Read , Eq )
+    data Expression = Expression [ String ] deriving ( Show , Read , Eq )
 
     -- |
     -- parse discussion
