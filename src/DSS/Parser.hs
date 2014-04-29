@@ -132,8 +132,8 @@ module DSS.Parser ( Discussion ( Discussion ) , Basiss ( Basiss ) , Label ( Labe
 
     expression :: TPR.ReadP Expression
     expression = do
-        f <- some $ TPC.noneOf ". \t\r\n\""
-        post <- some $ TPC.string "." >> ( some $ TPC.noneOf ". \t\r\n\"" )
+        f <- some $ TPC.noneOf ". \t\r\n\"{}"
+        post <- some $ TPC.string "." >> ( some $ TPC.noneOf ". \t\r\n\"{}" )
         return $ Expression $ f : post
 
     uri :: TPR.ReadP String

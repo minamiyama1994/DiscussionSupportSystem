@@ -28,7 +28,8 @@ module DSS.Html ( generateHtml , Html ( Html ) ) where
     generateExpressionString ( QuoteExpression expr ) baseUrl = generateExpression expr baseUrl
 
     generateExpression :: Expression -> String -> String
-    generateExpression ( Expression exprs ) baseUrl = "<a href=\"" ++ stringToHtmlString ( baseUrl ++ concat [ '/' : s | s <- init exprs ] ++ ( '#' : last exprs ) ) ++ "\">" ++ stringToHtmlString ( concat ( head exprs : [ '.' : s | s <- tail exprs ] ) ) ++ "</a>"
+    generateExpression ( Expression  [ name , discussion ] ) baseUrl = "<a href=\"" ++ stringToHtmlString ( baseUrl ++ concat [ '/' : name , '/' : discussion ] ) ++ "\">" ++ stringToHtmlString ( name ++ '.' : discussion ) ++ "</a>"
+    generateExpression ( Expression  [ name , discussion , label ] ) baseUrl = "<a href=\"" ++ stringToHtmlString ( baseUrl ++ concat [ '/' : name , '/' : discussion , '#' : label ] ) ++ "\">" ++ stringToHtmlString ( name ++ '.' : discussion ++ '.' : label ) ++ "</a>"
 
     generateClaim :: Claim -> String -> String
     generateClaim ( Claim exprs ) baseUrl = "My claim is<br /><strong>" ++ ( concat $ map ( \ e -> generateExpressionString e baseUrl ) exprs ) ++ "</strong>"
