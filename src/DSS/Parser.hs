@@ -125,7 +125,7 @@ module DSS.Parser ( Discussion ( Discussion ) , Basiss ( Basiss ) , Label ( Labe
 
     string_body :: TPR.ReadP [ ExpressionString ]
     string_body = do
-        c <- many $ choice [ StringExpression <$> ( some $ TPC.noneOf "\"\\{}" ) , StringExpression <$> ( TPC.string "\\{" >> return "{" ) , StringExpression <$> ( TPC.string "\\}" >> return "}" ) , StringExpression <$> ( TPC.string "\\\\" >> return "\\" ) , StringExpression <$> ( TPC.string "\\\"" >> return "\"" ) , QuoteExpression <$> between ( TPC.string "{" ) ( TPC.string "}" ) expression ]
+        c <- many $ choice [ StringExpression <$> ( TPC.noneOf "\"\\{}" >>= return . return ) , StringExpression <$> ( TPC.string "\\{" >> return "{" ) , StringExpression <$> ( TPC.string "\\}" >> return "}" ) , StringExpression <$> ( TPC.string "\\\\" >> return "\\" ) , StringExpression <$> ( TPC.string "\\\"" >> return "\"" ) , QuoteExpression <$> between ( TPC.string "{" ) ( TPC.string "}" ) expression ]
         return $ foldr ( \ e l -> case ( e , l ) of
                 ( StringExpression e' , StringExpression l' : ls ) -> StringExpression ( e' ++ l' ) : ls
                 _ -> e : l ) [ ] c
