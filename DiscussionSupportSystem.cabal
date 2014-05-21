@@ -10,7 +10,7 @@ name:                DiscussionSupportSystem
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.10.0.0
+version:             0.11.0.1
 
 -- A short (one-line) description of the package.
 synopsis:            Discussion support system
@@ -53,7 +53,7 @@ library
   -- other-modules:       
   
   -- Other library packages from which modules are imported.
-  build-depends:       base == 4.6.* , parsers >= 0.11 , html >= 1.0.1.2
+  build-depends:       base == 4.6.* , parsers >= 0.11 , html >= 1.0.1.2 , blaze-markup , blaze-html
   
   -- Directories containing source files.
   hs-source-dirs:      src

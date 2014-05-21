@@ -1,35 +1,61 @@
-module DSS.Html ( generateHtml , Html ( Html ) ) where
+{-# LANGUAGE FlexibleInstances #-}
+module DSS.Html where
 
+    import Control.Monad
     import DSS.Parser
     import Text.Html ( stringToHtmlString )
+    import Text.Blaze
+    import Text.Blaze.Html5
+    import Text.Blaze.Html5.Attributes
 
-    data Html = Html String
+    instance ToMarkup ( String , Discussion ) where
+        toMarkup ( baseUrl , Discussion opinion basiss claim ) = do
+            toMarkup ( baseUrl , opinion )
+            toMarkup ( baseUrl , basiss )
+            toMarkup ( baseUrl , claim )
 
-    generateHtml :: Discussion -> String -> Html
-    generateHtml ( Discussion opinion basiss claim ) baseUrl = Html $ concat [ gen baseUrl | gen <- [ generateOpinion opinion , generateBasiss basiss , generateClaim claim ] ]
+    instance ToMarkup ( String , Maybe Expression ) where
+        toMarkup ( baseUrl , Just expr ) = h1 $ do
+            toMarkup "to "
+            toMarkup ( baseUrl , expr )
+        toMarkup ( _ , Nothing ) = h1 $ do
+            toMarkup "Begin discussion"
 
-    generateOpinion :: Maybe Expression -> String -> String
-    generateOpinion ( Just expr ) baseUrl = "<h1>to " ++ generateExpression expr baseUrl ++ "</h1>"
-    generateOpinion Nothing _ = "<h1>Begin discussion</h1>"
+    instance ToMarkup ( String , Basiss ) where
+        toMarkup ( baseUrl , Basiss pairs ) = p $ do
+            toMarkup "My basis's is "
+            ul $ do
+                mapM_ ( toMarkup . ( , ) baseUrl ) pairs
 
-    generateBasiss :: Basiss -> String -> String
-    generateBasiss ( Basiss pairs ) baseUrl = "<p>My basis's is <ul>" ++ concat ( map ( \ p -> generateBasis p baseUrl ) pairs ) ++ "</ul></p>"
+    instance ToMarkup ( String ,( Maybe Label , Basis ) ) where
+        toMarkup ( baseUrl , ( Just l , b ) ) = li ! ( \ ( Label s ) -> Text.Blaze.Html5.Attributes.id $ toValue . stringToHtmlString $ s ) l $ do
+            a ! href ( ( \ ( Label s ) -> toValue . stringToHtmlString $ s ) l ) $ ( ( \ ( Label s ) -> toMarkup . stringToHtmlString $ s ) l ) 
+            br
+            toMarkup ( baseUrl , b )
+        toMarkup ( baseUrl , ( Nothing , b ) ) = li $ do
+            toMarkup ( baseUrl , b )
 
-    generateBasis :: ( Maybe Label , Basis ) -> String -> String
-    generateBasis ( l , b ) baseUrl = "<li" ++ maybe "" ( \ ( Label s ) -> " id=\"" ++ stringToHtmlString s ++ "\"" ) l ++ ">" ++ maybe "" ( \ ( Label s ) -> "<a href=\"#" ++ stringToHtmlString s ++ "\">" ++ stringToHtmlString s ++ "</a><br />" ) l ++ generateBasis' b baseUrl ++ "</li>"
+    instance ToMarkup ( String , Basis ) where
+        toMarkup ( _ , UrlBasis ( Url s ) ) = a ! href ( toValue $ stringToHtmlString s ) $ toMarkup $ stringToHtmlString s
+        toMarkup ( _ , BookBasis ( Book ( Isbn isbn ) pages ) ) = do
+            toMarkup $ "book of ISBN " ++ stringToHtmlString isbn
+            br
+            maybe ( toMarkup "" ) ( \ ( Pages ps ) -> do
+                br
+                toMarkup $ "pages of " ++ stringToHtmlString ( concat ( show ( Prelude.head ps ) : [ ',' : show s | s <- tail ps ] ) ) ) pages
+        toMarkup ( baseUrl , QuoteBasis ( Quote exprs ) ) = toMarkup $ mapM_ ( toMarkup . ( , ) baseUrl ) exprs
 
-    generateBasis' :: Basis -> String -> String
-    generateBasis' ( UrlBasis ( Url s ) ) _ = "<a href=\"" ++ stringToHtmlString s ++ "\">" ++ stringToHtmlString s ++ "</a>"
-    generateBasis' ( BookBasis ( Book ( Isbn isbn ) pages ) ) _ = "book of ISBN " ++ stringToHtmlString isbn ++ maybe "" ( \ ( Pages ps ) -> "<br />pages of " ++ stringToHtmlString ( concat ( show ( head ps ) : [ ',' : show s | s <- tail ps ] ) ) ) pages
-    generateBasis' ( QuoteBasis ( Quote exprs ) ) baseUrl = concat $ map ( \ e -> generateExpressionString e baseUrl ) exprs
+    instance ToMarkup ( String , ExpressionString ) where
+        toMarkup ( _ , StringExpression s ) = toMarkup s
+        toMarkup ( baseUrl , ( QuoteExpression expr ) ) = toMarkup ( baseUrl , expr )
 
-    generateExpressionString :: ExpressionString -> String -> String
-    generateExpressionString ( StringExpression s ) _ = stringToHtmlString s
-    generateExpressionString ( QuoteExpression expr ) baseUrl = generateExpression expr baseUrl
+    instance ToMarkup ( String , Expression ) where
+        toMarkup ( baseUrl , Expression [ name , discussion ] ) = a ! href ( toValue $ stringToHtmlString ( baseUrl ++ '/' : name ++ '/' : discussion ) ) $ toMarkup $ stringToHtmlString ( name ++ '.' : discussion )
+        toMarkup ( baseUrl , Expression [ name , discussion , label ] ) = a ! href ( toValue $ stringToHtmlString ( baseUrl ++ '/' : name ++ '/' : discussion ++ '#' : label ) ) $ toMarkup $ stringToHtmlString ( name ++ '.' : discussion ++ '.' : label )
 
-    generateExpression :: Expression -> String -> String
-    generateExpression ( Expression  [ name , discussion ] ) baseUrl = "<a href=\"" ++ stringToHtmlString ( baseUrl ++ concat [ '/' : name , '/' : discussion ] ) ++ "\">" ++ stringToHtmlString ( name ++ '.' : discussion ) ++ "</a>"
-    generateExpression ( Expression  [ name , discussion , label ] ) baseUrl = "<a href=\"" ++ stringToHtmlString ( baseUrl ++ concat [ '/' : name , '/' : discussion , '#' : label ] ) ++ "\">" ++ stringToHtmlString ( name ++ '.' : discussion ++ '.' : label ) ++ "</a>"
-
-    generateClaim :: Claim -> String -> String
-    generateClaim ( Claim exprs ) baseUrl = "My claim is<br /><strong>" ++ ( concat $ map ( \ e -> generateExpressionString e baseUrl ) exprs ) ++ "</strong>"
+    instance ToMarkup ( String , Claim ) where
+        toMarkup ( baseUrl , Claim exprs ) = do
+            toMarkup "My claim is"
+            br
+            strong $ do
+                mapM_ ( toMarkup . ( , ) baseUrl ) exprs
